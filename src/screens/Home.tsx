@@ -1,24 +1,34 @@
 import React from 'react';
-import {SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity} from 'react-native';
 
-const HomeScreen = () => {
+import {Container} from '../components';
+import theme from '../global/styles/theme';
+
+export const HomeScreen = ({navigation}) => {
   return (
-    <SafeAreaView style={styles.appContainer}>
-      <View style={styles.contentWrapper}>
-        <Text>Modusense Charts</Text>
-      </View>
-    </SafeAreaView>
+    <Container>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('BarChart')}>
+        <Text style={styles.buttonText}>Bar chart</Text>
+      </TouchableOpacity>
+    </Container>
   );
 };
 
 const styles = StyleSheet.create({
-  appContainer: {
-    flex: 1,
+  button: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    backgroundColor: theme.colors.primary,
+    marginBottom: 16,
+    borderRadius: 4,
   },
-  contentWrapper: {
-    flex: 1,
-    padding: 16,
+  buttonText: {
+    color: theme.colors.text,
+    fontSize: 20,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
 });
-
-export default HomeScreen;
