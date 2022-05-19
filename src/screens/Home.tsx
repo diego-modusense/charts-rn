@@ -12,7 +12,7 @@ export const HomeScreen = ({navigation}) => {
         onPress={() => navigation.navigate('BarChart')}>
         <Text style={styles.buttonText}>Bar chart</Text>
       </TouchableOpacity>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.button}
         onPress={() =>
           navigation.navigate('WaterChart', {
@@ -42,6 +42,11 @@ export const HomeScreen = ({navigation}) => {
           })
         }>
         <Text style={styles.buttonText}>Water chart</Text>
+      </TouchableOpacity> */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('LiquidGauge')}>
+        <Text style={styles.buttonText}>Liquid Gauge</Text>
       </TouchableOpacity>
     </Container>
   );

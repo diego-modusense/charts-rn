@@ -6,4 +6,12 @@ export default {
     text: '#333',
     background: '#F0F2F5',
   },
+  charts: {
+    water: {
+      circleColor: '#178BCA',
+      waveColor: '#178BCA',
+      textPrimary: '#045681',
+      textSecondary: '#a4dbf8',
+    },
+  },
 };
