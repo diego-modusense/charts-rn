@@ -1,7 +1,7 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import {BarChart, HomeScreen} from '../screens';
+import {BarChart, HomeScreen, WaterChart} from '../screens';
 
 const stackRoutes = createNativeStackNavigator();
 
@@ -16,6 +16,11 @@ const AppRoutes: React.FC = () => (
       name="BarChart"
       component={BarChart}
       options={{title: 'Bar Chart'}}
+    />
+    <stackRoutes.Screen
+      name="WaterChart"
+      component={WaterChart}
+      options={{title: 'Water Chart'}}
     />
   </stackRoutes.Navigator>
 );

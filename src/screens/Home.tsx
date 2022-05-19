@@ -12,6 +12,37 @@ export const HomeScreen = ({navigation}) => {
         onPress={() => navigation.navigate('BarChart')}>
         <Text style={styles.buttonText}>Bar chart</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() =>
+          navigation.navigate('WaterChart', {
+            value: 45.34,
+            config: {
+              minValue: 0,
+              maxValue: 100,
+              circleThickness: 0.05,
+              circleFillGap: 0.05,
+              circleColor: '#178BCA',
+              waveHeight: 0.05,
+              waveCount: 3,
+              waveRiseTime: 1000,
+              waveAnimateTime: 2000,
+              waveRise: true,
+              waveHeightScaling: true,
+              waveAnimate: true,
+              waveColor: '#178BCA',
+              waveOffset: 0.25,
+              textVertPosition: 0.8,
+              textSize: 0.6,
+              valueCountUp: true,
+              displayPercent: true,
+              textColor: '#045681',
+              waveTextColor: '#A4DBf8',
+            },
+          })
+        }>
+        <Text style={styles.buttonText}>Water chart</Text>
+      </TouchableOpacity>
     </Container>
   );
 };
