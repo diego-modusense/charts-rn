@@ -1,393 +1,141 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Dimensions,
+  TouchableOpacity,
 } from 'react-native';
 import {
   Circle,
+  ClipPath,
+  Defs,
   G,
-  Line,
-  NumberProp,
-  Rect,
+  Path,
   Svg,
   Text as TextSvg,
 } from 'react-native-svg';
-import * as d3 from 'd3';
 
 import {Container} from '../components';
 import theme from '../global/styles/theme';
 
-type LiquidFillGaugeDefaultSettings = {
-  minValue: number;
-  maxValue: number;
-  circleThickness: number;
-  circleFillGap: number;
-  circleColor: string;
-  waveHeight: number;
-  waveCount: number;
-  waveRiseTime: number;
-  waveAnimateTime: number;
-  waveRise: boolean;
-  waveHeightScaling: boolean;
-  waveAnimate: boolean;
-  waveColor: string;
-  waveOffset: number;
-  textVertPosition: number;
-  textSize: number;
-  valueCountUp: boolean;
-  displayPercent: boolean;
-  textColor: string;
-  waveTextColor: string;
-};
+export const WaterChart = ({navigation}) => {
+  const svgWidth =
+    Dimensions.get('screen').width - theme.spaces.containerPadding * 2;
+  const svgHeight = 400;
+  const radius = 112.5;
+  const fontSize = 37.5;
 
-type RouteParams = {
-  value: number;
-  config: LiquidFillGaugeDefaultSettings;
-};
+  const locationX = 200;
+  const locationY = 180;
 
-export const WaterChart = ({route, navigation}) => {
-  //   const value: number = route.params.value;
-  //   const config: LiquidFillGaugeDefaultSettings = route.params.config;
+  const topLimitWave = 62;
+  const bottomLimitWave = 290;
+  const leftLimitWave = 87;
+  const rightLimitWave = 14;
 
-  const {value, config}: RouteParams = route.params;
+  const [value, setValue] = useState(randomInRange(0, 100));
+  const [wavePosition, setWavePosition] = useState(rightLimitWave);
 
-  const svgWidth = Dimensions.get('screen').width * 0.97; // '97%';
-  const svgHeight = 250;
-  let radius = Math.min(svgWidth, svgHeight) / 2;
-  // var radius = Math.min(parseInt(gauge.style("width")), parseInt(gauge.style("height"))) / 2;
+  const handleWaveAnimation = useCallback(() => {
+    if (wavePosition <= leftLimitWave) {
+      setWavePosition(wavePosition + 1);
+    } else {
+      setWavePosition(rightLimitWave);
+    }
+  }, [wavePosition]);
 
-  // var locationX = parseInt(gauge.style("width")) / 2 - radius;
-  let locationX = svgWidth / 2 - radius;
-  // var locationY = parseInt(gauge.style("height")) / 2 - radius;
-  let locationY = svgHeight / 2 - radius;
-  // var fillPercent = Math.max(config.minValue, Math.min(config.maxValue, value)) / config.maxValue;
-  let fillPercent =
-    Math.max(config.minValue, Math.min(config.maxValue, value)) /
-    config.maxValue;
+  useEffect(() => {
+    const waveAnimationTimeout = setTimeout(handleWaveAnimation, 15);
 
-  //   var waveHeightScale;
-  let waveHeightScale = null as unknown as d3.ScaleLinear<
-    number,
-    number,
-    never
-  >;
-  //   if (config.waveHeightScaling) {
-  //     waveHeightScale = d3.scale
-  //       .linear()
-  //       .range([0, config.waveHeight, 0])
-  //       .domain([0, 50, 100]);
-  //   } else {
-  //     waveHeightScale = d3.scale
-  //       .linear()
-  //       .range([config.waveHeight, config.waveHeight])
-  //       .domain([0, 100]);
-  //   }
-  if (config.waveHeightScaling) {
-    waveHeightScale = d3
-      .scaleLinear()
-      .range([0, config.waveHeight, 0])
-      .domain([0, 50, 100]);
-  } else {
-    waveHeightScale = d3
-      .scaleLinear()
-      .range([config.waveHeight, config.waveHeight])
-      .domain([0, 100]);
-  }
+    return () => {
+      clearTimeout(waveAnimationTimeout);
+    };
+  }, [handleWaveAnimation]);
 
-  //   var textPixels = (config.textSize * radius) / 2;
-  const textPixels = (config.textSize * radius) / 2;
-  // var textFinalValue = parseFloat(value).toFixed(2);
-  const textFinalValue = parseFloat(value.toString()).toFixed(2);
-  // var textStartValue = config.valueCountUp ? config.minValue : textFinalValue;
-  const textStartValue = config.valueCountUp ? config.minValue : textFinalValue;
-  // var percentText = config.displayPercent ? '%' : '';
-  const percentText = config.displayPercent ? '%' : '';
-  // var circleThickness = config.circleThickness * radius;
-  const circleThickness = config.circleThickness * radius;
-  // var circleFillGap = config.circleFillGap * radius;
-  const circleFillGap = config.circleFillGap * radius;
-  // var fillCircleMargin = circleThickness + circleFillGap;
-  const fillCircleMargin = circleThickness + circleFillGap;
-  // var fillCircleRadius = radius - fillCircleMargin;
-  const fillCircleRadius = radius - fillCircleMargin;
-  // var waveHeight = fillCircleRadius * waveHeightScale(fillPercent * 100);
-  const waveHeight = fillCircleRadius * waveHeightScale(fillPercent * 100);
+  const getWaveYAxis = () => {
+    const totalWaterLevel = bottomLimitWave - topLimitWave;
 
-  // var waveLength = (fillCircleRadius * 2) / config.waveCount;
-  const waveLength = (fillCircleRadius * 2) / config.waveCount;
-  // var waveClipCount = 1 + config.waveCount;
-  const waveClipCount = 1 + config.waveCount;
-  // var waveClipWidth = waveLength * waveClipCount;
-  const waveClipWidth = waveLength * waveClipCount;
+    if (value <= 0) return 300;
 
-  // // Rounding functions so that the correct number of decimal places is always displayed as the value counts up.
-  // var textRounder = function (value) {
-  //   return Math.round(value);
-  // };
-  let textRounder = (valueToRounder: number) => {
-    return Math.round(valueToRounder).toString();
+    if (value >= 100) return topLimitWave;
+
+    const tankPercentage = (totalWaterLevel * value) / 100;
+
+    return bottomLimitWave - tankPercentage;
   };
-  // if (parseFloat(textFinalValue) != parseFloat(textRounder(textFinalValue))) {
-  //   textRounder = function (value) {
-  //   return parseFloat(value).toFixed(1);
-  //   };
-  // }
-  if (
-    parseFloat(textFinalValue) !==
-    parseFloat(textRounder(Number(textFinalValue)).toString())
-  ) {
-    textRounder = (valueToRounder: number) =>
-      parseFloat(valueToRounder.toString()).toFixed(1);
+
+  const handleNewWaterLevel = () => {
+    setValue(randomInRange(0, 100));
+  };
+
+  function randomInRange(min: number, max: number) {
+    const result =
+      Math.random() < 0.5
+        ? (1 - Math.random()) * (max - min) + min
+        : Math.random() * (max - min) + min;
+
+    return Number(result.toFixed(2));
   }
-  // if (parseFloat(textFinalValue) != parseFloat(textRounder(textFinalValue))) {
-  //   textRounder = function (value) {
-  //   return parseFloat(value).toFixed(2);
-  //   };
-  // }
-  if (
-    parseFloat(textFinalValue) !==
-    parseFloat(textRounder(Number(textFinalValue)))
-  ) {
-    textRounder = (valueToRounder: number) =>
-      parseFloat(valueToRounder.toString()).toFixed(2);
-  }
-
-  //   // Data for building the clip wave area.
-  //   var data = [];
-  //   for (var i = 0; i <= 40 * waveClipCount; i++) {
-  //     data.push({
-  //       x: i / (40 * waveClipCount),
-  //       y: i / 40,
-  //     });
-  //   }
-  const data: Array<{x: number; y: number}> = [];
-  for (let index = 0; index <= 40 * waveClipCount; index++) {
-    data.push({
-      x: index / (40 * waveClipCount),
-      y: index / 40,
-    });
-  }
-
-  //   // Scales for drawing the outer circle.
-  //   var gaugeCircleX = d3.scale
-  //     .linear()
-  //     .range([0, 2 * Math.PI])
-  //     .domain([0, 1]);
-  //   var gaugeCircleY = d3.scale.linear().range([0, radius]).domain([0, radius]);
-  const gaugeCircleX = d3
-    .scaleLinear()
-    .range([0, 2 * Math.PI])
-    .domain([0, 1]);
-  const gaugeCircleY = d3.scaleLinear().range([0, radius]).domain([0, radius]);
-
-  //   // Scales for controlling the size of the clipping path.
-  //   var waveScaleX = d3.scale.linear().range([0, waveClipWidth]).domain([0, 1]);
-  //   var waveScaleY = d3.scale.linear().range([0, waveHeight]).domain([0, 1]);
-  const waveScaleX = d3.scaleLinear().range([0, waveClipWidth]).domain([0, 1]);
-  const waveScaleY = d3.scaleLinear().range([0, waveHeight]).domain([0, 1]);
-
-  //   // Scales for controlling the position of the clipping path.
-  //   var waveRiseScale = d3.scale
-  //     .linear()
-  //     // The clipping area size is the height of the fill circle + the wave height, so we position the clip wave
-  //     // such that the it will won't overlap the fill circle at all when at 0%, and will totally cover the fill
-  //     // circle at 100%.
-  //     .range([
-  //       fillCircleMargin + fillCircleRadius * 2 + waveHeight,
-  //       fillCircleMargin - waveHeight,
-  //     ])
-  //     .domain([0, 1]);
-  //   var waveAnimateScale = d3.scale
-  //     .linear()
-  //     .range([0, waveClipWidth - fillCircleRadius * 2]) // Push the clip area one full wave then snap back.
-  //     .domain([0, 1]);
-  const waveRiseScale = d3
-    .scaleLinear()
-    .range([
-      fillCircleMargin + fillCircleRadius * 2 + waveHeight,
-      fillCircleMargin - waveHeight,
-    ])
-    .domain([0, 1]);
-  const waveAnimateScale = d3
-    .scaleLinear()
-    .range([0, waveClipWidth - fillCircleRadius * 2])
-    .domain([0, 1]);
-
-  //   // Scale for controlling the position of the text within the gauge.
-  //   var textRiseScaleY = d3.scale
-  //     .linear()
-  //     .range([
-  //       fillCircleMargin + fillCircleRadius * 2,
-  //       fillCircleMargin + textPixels * 0.7,
-  //     ])
-  //     .domain([0, 1]);
-  const textRiseScaleY = d3
-    .scaleLinear()
-    .range([
-      fillCircleMargin + fillCircleRadius * 2,
-      fillCircleMargin + textPixels * 0.7,
-    ])
-    .domain([0, 1]);
-
-  //   // Center the gauge within the parent SVG.
-  //   var gaugeGroup = gauge
-  //     .append('g')
-  //     .attr('transform', 'translate(' + locationX + ',' + locationY + ')');
-
-  // ===========================================================================
-  // CHECK THIS PART
-  // ===========================================================================
-  const gaugeGroup = (children: JSX.Element) => <G>{children}</G>;
-
-  //   // Draw the outer circle.
-  //   var gaugeCircleArc = d3.svg
-  //     .arc()
-  //     .startAngle(gaugeCircleX(0))
-  //     .endAngle(gaugeCircleX(1))
-  //     .outerRadius(gaugeCircleY(radius))
-  //     .innerRadius(gaugeCircleY(radius - circleThickness));
-  //   gaugeGroup
-  //     .append('path')
-  //     .attr('d', gaugeCircleArc)
-  //     .style('fill', config.circleColor)
-  //     .attr('transform', 'translate(' + radius + ',' + radius + ')');
-  const gaugeCircleArc = d3
-    .arc()
-    .startAngle(gaugeCircleX(0))
-    .endAngle(gaugeCircleX(1))
-    .outerRadius(gaugeCircleY(radius))
-    .innerRadius(gaugeCircleY(radius - circleThickness));
-
-  //   // Text where the wave does not overlap.
-  //   var text1 = gaugeGroup
-  //     .append('text')
-  //     .text(textRounder(textStartValue) + percentText)
-  //     .attr('class', 'liquidFillGaugeText')
-  //     .attr('text-anchor', 'middle')
-  //     .attr('font-size', textPixels + 'px')
-  //     .style('fill', config.textColor)
-  //     .attr(
-  //       'transform',
-  //       'translate(' +
-  //         radius +
-  //         ',' +
-  //         textRiseScaleY(config.textVertPosition) +
-  //         ')',
-  //     );
-
-  const cx = svgWidth / 2;
-  const cy = svgHeight / 2;
 
   return (
     <Container>
       <View style={styles.contentWrapper}>
-        <Svg
-          width={svgWidth}
-          height={svgHeight}
-          style={{backgroundColor: 'white'}}>
-          {/* <Svg width={300} height={60} fill={theme.colors.primary}> */}
+        <Svg width={svgWidth} height={svgHeight} style={styles.svg}>
           <G>
-            <Circle cx={radius} cy={radius} r={80} fill={config.circleColor} />
-            <TextSvg>{textRounder(value)}</TextSvg>
-
-            <TextSvg
-              x={radius / 2}
-              y={textRiseScaleY(0)}
-              //   fontSize={textPixels}
-              fontSize={32}
-              fontWeight={'bold'}
-              fill={theme.colors.text}>
-              {`${textRounder(value)}%`}
-            </TextSvg>
-            {/* <Line
-              x1={0}
-              y1={0}
-              x2={0}
-              y2={svgHeight}
-              stroke={theme.colors.text}
-              strokeWidth={1}
+            <Path
+              d={
+                'M0,125A125,125 0 1,1 0,-125A125,125 0 1,1 0,125M0,118.75A118.75,118.75 0 1,0 0,-118.75A118.75,118.75 0 1,0 0,118.75Z'
+              }
+              transform={`translate(${locationX}, ${locationY})`}
+              fill={theme.charts.water.waveColor}
             />
-            <Line
-              x1={svgWidth}
-              y1={svgHeight}
-              x2={0}
-              y2={svgHeight}
-              stroke={theme.colors.text}
-              strokeWidth={1}
-            /> */}
+            <TextSvg
+              textAnchor={'middle'}
+              fontSize={fontSize}
+              transform={`translate(${locationX}, ${locationY})`}
+              fill={theme.charts.water.textPrimary}
+              fontWeight={'bold'}>
+              {`${value}%`}
+            </TextSvg>
+
+            {/* ============================================================ */}
+            {/* WAVE MASK START */}
+            {/* ============================================================ */}
+            <Defs>
+              <ClipPath id="clipPathWave">
+                <Path
+                  d="M0,230.10075L1.875,230.10075L3.75,230.10075L5.625,230.10075L7.5,230.10075L9.375,230.10075L11.25,230.10075L13.125,230.10075L15,230.10075L16.875,230.10075L18.75,230.10075L20.625,230.10075L22.5,230.10075L24.375,230.10075L26.25,230.10075L28.125,230.10075L30,230.10075L31.875,230.10075L33.75,230.10075L35.625,230.10075L37.5,230.10075L39.375,230.10075L41.25,230.10075L43.125,230.10075L45,230.10075L46.875,230.10075L48.75,230.10075L50.625,230.10075L52.5,230.10075L54.375,230.10075L56.25,230.10075L58.125,230.10075L60,230.10075L61.875,230.10075L63.75,230.10075L65.625,230.10075L67.5,230.10075L69.375,230.10075L71.25,230.10075L73.125,230.10075L75,230.10075L76.875,230.10075L78.75,230.10075L80.625,230.10075L82.5,230.10075L84.375,230.10075L86.25,230.10075L88.125,230.10075L90,230.10075L91.875,230.10075L93.75,230.10075L95.625,230.10075L97.5,230.10075L99.375,230.10075L101.25,230.10075L103.125,230.10075L105,230.10075L106.875,230.10075L108.75,230.10075L110.625,230.10075L112.5,230.10075L114.375,230.10075L116.25,230.10075L118.125,230.10075L120,230.10075L121.875,230.10075L123.75,230.10075L125.625,230.10075L127.5,230.10075L129.375,230.10075L131.25,230.10075L133.125,230.10075L135,230.10075L136.875,230.10075L138.75,230.10075L140.625,230.10075L142.5,230.10075L144.375,230.10075L146.25,230.10075L148.125,230.10075L150,230.10075L151.875,230.10075L153.75,230.10075L155.625,230.10075L157.5,230.10075L159.375,230.10075L161.25,230.10075L163.125,230.10075L165,230.10075L166.875,230.10075L168.75,230.10075L170.625,230.10075L172.5,230.10075L174.375,230.10075L176.25,230.10075L178.125,230.10075L180,230.10075L181.875,230.10075L183.75,230.10075L185.625,230.10075L187.5,230.10075L189.375,230.10075L191.25,230.10075L193.125,230.10075L195,230.10075L196.875,230.10075L198.75,230.10075L200.625,230.10075L202.5,230.10075L204.375,230.10075L206.25,230.10075L208.125,230.10075L210,230.10075L211.875,230.10075L213.75,230.10075L215.625,230.10075L217.5,230.10075L219.375,230.10075L221.25,230.10075L223.125,230.10075L225,230.10075L226.875,230.10075L228.75,230.10075L230.625,230.10075L232.5,230.10075L234.375,230.10075L236.25,230.10075L238.125,230.10075L240,230.10075L241.875,230.10075L243.75,230.10075L245.625,230.10075L247.5,230.10075L249.375,230.10075L251.25,230.10075L253.125,230.10075L255,230.10075L256.875,230.10075L258.75,230.10075L260.625,230.10075L262.5,230.10075L264.375,230.10075L266.25,230.10075L268.125,230.10075L270,230.10075L271.875,230.10075L273.75,230.10075L275.625,230.10075L277.5,230.10075L279.375,230.10075L281.25,230.10075L283.125,230.10075L285,230.10075L286.875,230.10075L288.75,230.10075L290.625,230.10075L292.5,230.10075L294.375,230.10075L296.25,230.10075L298.125,230.10075L300,230.10075L300,-5.100750000000001L298.125,-5.037951303290648L296.25,-4.851101525492507L294.375,-4.544801528253811L292.5,-4.126593434058012L290.625,-3.606774914137278L288.75,-2.9981456256308383L286.875,-2.315692041546496L285,-1.5762184340580114L283.125,-0.7979330975539514L281.25,1.0934737296796087e-14L279.375,0.797933097553955L277.5,1.576218434058015L275.625,2.3156920415464994L273.75,2.998145625630841L271.875,3.6067749141372807L270,4.126593434058014L268.125,4.544801528253813L266.25,4.851101525492508L264.375,5.037951303290649L262.5,5.100750000000001L260.625,5.037951303290648L258.75,4.851101525492508L256.875,4.544801528253811L255,4.126593434058012L253.125,3.6067749141372785L251.25,2.9981456256308388L249.375,2.3156920415464963L247.5,1.5762184340580119L245.625,0.7979330975539519L243.75,7.811428716420656e-15L241.875,-0.7979330975539545L240,-1.5762184340580143L238.125,-2.3156920415464985L236.25,-2.9981456256308405L234.375,-3.6067749141372802L232.5,-4.126593434058014L230.625,-4.544801528253813L228.75,-4.851101525492508L226.875,-5.037951303290649L225,-5.100750000000001L223.125,-5.037951303290648L221.25,-4.851101525492508L219.375,-4.544801528253811L217.5,-4.126593434058013L215.625,-3.606774914137279L213.75,-2.9981456256308396L211.875,-2.315692041546497L210,-1.5762184340580125L208.125,-0.7979330975539526L206.25,9.685413864645914e-15L204.375,0.7979330975539539L202.5,1.5762184340580137L200.625,2.315692041546498L198.75,2.9981456256308405L196.875,3.6067749141372802L195,4.126593434058013L193.125,4.544801528253812L191.25,4.851101525492508L189.375,5.03795130329065L187.5,5.100750000000001L185.625,5.03795130329065L183.75,4.851101525492508L181.875,4.5448015282538154L180,4.126593434058013L178.125,3.6067749141372794L176.25,2.9981456256308325L174.375,2.3156920415464977L172.5,1.5762184340580045L170.625,0.7979330975539531L168.75,0L166.875,-0.7979330975539531L165,-1.5762184340580045L163.125,-2.3156920415464977L161.25,-2.9981456256308325L159.375,-3.6067749141372794L157.5,-4.126593434058013L155.625,-4.5448015282538154L153.75,-4.851101525492508L151.875,-5.03795130329065L150,-5.100750000000001L148.125,-5.03795130329065L146.25,-4.851101525492505L144.375,-4.54480152825382L142.5,-4.126593434058013L140.625,-3.6067749141372802L138.75,-2.9981456256308334L136.875,-2.31569204154649L135,-1.5762184340580137L133.125,-0.7979330975539539L131.25,-6.246617160750862e-16L129.375,0.7979330975539526L127.5,1.5762184340580125L125.625,2.3156920415464888L123.75,2.998145625630832L121.875,3.606774914137279L120,4.126593434058013L118.125,4.54480152825382L116.25,4.8511015254925045L114.375,5.03795130329065L112.5,5.100750000000001L110.625,5.03795130329065L108.75,4.851101525492505L106.875,4.54480152825382L105,4.126593434058014L103.125,3.6067749141372802L101.25,2.998145625630834L99.375,2.3156920415464906L97.5,1.5762184340580143L95.625,0.7979330975539545L93.75,1.2493234321501725e-15L91.875,-0.7979330975539519L90,-1.5762184340580119L88.125,-2.3156920415464923L86.25,-2.9981456256308348L84.375,-3.606774914137282L82.5,-4.126593434058011L80.625,-4.544801528253817L78.75,-4.8511015254925045L76.875,-5.037951303290649L75,-5.100750000000001L73.125,-5.03795130329065L71.25,-4.851101525492505L69.375,-4.544801528253816L67.5,-4.126593434058014L65.625,-3.606774914137287L63.75,-2.998145625630834L61.875,-2.315692041546491L60,-1.576218434058015L58.125,-0.7979330975539639L56.25,-1.8739851482252586e-15L54.375,0.7979330975539602L52.5,1.5762184340580114L50.625,2.315692041546488L48.75,2.998145625630831L46.875,3.6067749141372847L45,4.126593434058012L43.125,4.544801528253819L41.25,4.8511015254925045L39.375,5.037951303290649L37.5,5.100750000000001L35.625,5.03795130329065L33.75,4.851101525492506L31.875,4.544801528253817L30,4.126593434058015L28.125,3.6067749141372873L26.25,2.9981456256308343L24.375,2.3156920415464914L22.5,1.5762184340580156L20.625,0.7979330975539646L18.75,2.498646864300345e-15L16.875,-0.7979330975539597L15,-1.5762184340580108L13.125,-2.315692041546487L11.25,-2.9981456256308303L9.375,-3.6067749141372842L7.5,-4.126593434058012L5.625,-4.544801528253815L3.75,-4.8511015254925045L1.875,-5.037951303290649L0,-5.100750000000001Z"
+                  transform={`translate(${wavePosition}, ${getWaveYAxis()})`}
+                  fill={theme.charts.water.waveColor}
+                />
+              </ClipPath>
+            </Defs>
+            {/* ============================================================ */}
+            {/* WAVE MASK END */}
+            {/* ============================================================ */}
+            <G clipPath="#clipPathWave">
+              <Circle
+                cx={locationX}
+                cy={locationY}
+                r={radius}
+                fill={theme.charts.water.waveColor}
+              />
+              <TextSvg
+                textAnchor={'middle'}
+                fontSize={fontSize}
+                transform={`translate(${locationX}, ${locationY})`}
+                fill={theme.charts.water.textSecondary}
+                fontWeight={'bold'}>
+                {`${value}%`}
+              </TextSvg>
+            </G>
           </G>
         </Svg>
-        <Text style={styles.label}>Water Chart example</Text>
-        <ScrollView style={styles.list}>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>Value</Text>
-            <Text style={styles.infoText}>{value}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>Radius</Text>
-            <Text style={styles.infoText}>{radius}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>Location X</Text>
-            <Text style={styles.infoText}>{locationX}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>location Y</Text>
-            <Text style={styles.infoText}>{locationY}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>textPixels</Text>
-            <Text style={styles.infoText}>{textPixels}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>textFinalValue</Text>
-            <Text style={styles.infoText}>{textFinalValue}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>textStartValue</Text>
-            <Text style={styles.infoText}>{textStartValue}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>percentText</Text>
-            <Text style={styles.infoText}>{percentText}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>circleThickness</Text>
-            <Text style={styles.infoText}>{circleThickness}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>circleFillGap</Text>
-            <Text style={styles.infoText}>{circleFillGap}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>fillCircleMargin</Text>
-            <Text style={styles.infoText}>{fillCircleMargin}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>fillCircleRadius</Text>
-            <Text style={styles.infoText}>{fillCircleRadius}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>waveHeight</Text>
-            <Text style={styles.infoText}>{waveHeight}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>waveLength</Text>
-            <Text style={styles.infoText}>{waveLength}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>waveClipCount</Text>
-            <Text style={styles.infoText}>{waveClipCount}</Text>
-          </View>
-          <View style={styles.infoWrapper}>
-            <Text style={styles.infoLabel}>waveClipWidth</Text>
-            <Text style={styles.infoText}>{waveClipWidth}</Text>
-          </View>
-        </ScrollView>
+        <Text style={styles.label}>Water level example</Text>
+        <TouchableOpacity style={styles.button} onPress={handleNewWaterLevel}>
+          <Text style={styles.buttonText}>New Water Level</Text>
+        </TouchableOpacity>
       </View>
     </Container>
   );
@@ -404,25 +152,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 16,
   },
-  list: {
-    width: '100%',
+  svg: {
+    backgroundColor: theme.charts.water.background,
   },
-  infoWrapper: {
-    width: '100%',
-    // backgroundColor: '#ccc',
-    padding: 4,
-    borderBottomColor: '#ccc',
-    borderBottomWidth: 1,
-    borderStyle: 'solid',
-    marginBottom: 4,
+  button: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 16,
+    borderRadius: 4,
   },
-  infoLabel: {
+  buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    paddingBottom: 8,
-  },
-  infoText: {
-    fontSize: 15,
-    fontWeight: '600',
+    color: theme.colors.text,
   },
 });

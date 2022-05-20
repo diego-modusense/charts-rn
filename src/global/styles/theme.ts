@@ -1,4 +1,7 @@
 export default {
+  spaces: {
+    containerPadding: 16,
+  },
   colors: {
     primary: '#8BC43F',
 

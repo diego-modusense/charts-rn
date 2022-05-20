@@ -1,7 +1,7 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import {BarChart, HomeScreen, WaterChart, LiquidGauge} from '../screens';
+import {BarChart, HomeScreen, WaterChart} from '../screens';
 
 const stackRoutes = createNativeStackNavigator();
 
@@ -20,12 +20,7 @@ const AppRoutes: React.FC = () => (
     <stackRoutes.Screen
       name="WaterChart"
       component={WaterChart}
-      options={{title: 'Water Chart'}}
-    />
-    <stackRoutes.Screen
-      name="LiquidGauge"
-      component={LiquidGauge}
-      options={{title: 'Liquid Gauge'}}
+      options={{title: 'Water Level'}}
     />
   </stackRoutes.Navigator>
 );

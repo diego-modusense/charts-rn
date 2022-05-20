@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     flex: 1,
-    padding: 16,
+    padding: theme.spaces.containerPadding,
     backgroundColor: theme.colors.background,
   },
 });

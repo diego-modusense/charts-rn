@@ -45,8 +45,8 @@ export const HomeScreen = ({navigation}) => {
       </TouchableOpacity> */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('LiquidGauge')}>
-        <Text style={styles.buttonText}>Liquid Gauge</Text>
+        onPress={() => navigation.navigate('WaterChart')}>
+        <Text style={styles.buttonText}>Water Level</Text>
       </TouchableOpacity>
     </Container>
   );
