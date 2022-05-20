@@ -8,6 +8,7 @@ export default {
   },
   charts: {
     water: {
+      background: 'white',
       circleColor: '#178BCA',
       waveColor: '#178BCA',
       textPrimary: '#045681',
