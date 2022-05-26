@@ -1,5 +1,6 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import Icon from 'react-native-fontawesome-pro';
 
 import {Container} from '../components';
 import theme from '../global/styles/theme';
@@ -48,6 +49,12 @@ export const HomeScreen = ({navigation}) => {
         onPress={() => navigation.navigate('WaterChart')}>
         <Text style={styles.buttonText}>Water Level</Text>
       </TouchableOpacity>
+      <View>
+        <Icon name="chevron-right" color="red" type="regular" size={24} />
+      </View>
+      <View>
+        <Icon name="alicorn" color="red" type="light" size={56} />
+      </View>
     </Container>
   );
 };
